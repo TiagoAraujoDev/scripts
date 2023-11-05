@@ -27,12 +27,14 @@ FIND_COMMAND+=" -type d -print"
 
 SELECTED_PATH=$(eval "$FIND_COMMAND" | fzf)
 
-if [ $SELECTED_PATH ]; then
+if [ $SELECTED_PATH ] && [ $2 ]; then
   cd $SELECTED_PATH
   if [ $1 == "-t" ]; then
-    zellij action new-tab -n fzf_tab --layout ~/.config/zellij/zdir.kdl
+    zellij action new-tab -n $2 --layout ~/.config/zellij/zdir.kdl
+  elif [ $1 == "-s" ]; then
+    zellij --session $2
   else
-    zellij --session fzf_session
+    zellij --session default
   fi
 else
   echo "❌ No path selected!"
