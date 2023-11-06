@@ -70,7 +70,7 @@ get_file() {
     FIND_COMMAND+=" -name '$dir' -prune -o"
   done
   FIND_COMMAND+=" -type f -print"
-  FILE=$(eval "$FIND_COMMAND" | fzf --prompt="󰈞 Search file: " --height=40% --min-height=5 --pointer=" " --layout=reverse --border --preview "cat {}")
+  FILE=$(eval "$FIND_COMMAND" | fzf --prompt="󰈞 Search file: " --height=40% --min-height=5 --pointer=" " --layout=reverse --border --preview "bat {}")
   echo $FILE
 }
 
@@ -86,7 +86,17 @@ if [ $# == 0 ]; then
     fi
   fi
 elif [ $# == 1 ]; then
-  echo "󰂭  invalid command: fzj $1 [value]"
+  if [ $1 == "-f" ]; then
+    file=$(get_file)
+    
+    if [ $file ]; then
+      zellij action edit $file
+    else
+      echo "󰂭  No file selected!"
+    fi
+  else
+    echo "󰂭  invalid command: fzj $1 [value]"
+  fi
 else
   if [ $1 == "-t" ]; then
     path=$(get_dir)
@@ -106,14 +116,6 @@ else
       zellij --session $2
     else
       echo "󰂭  No path selected!"
-    fi
-  elif [ $1 == "-f" ]; then
-    file=$(get_file)
-    
-    if [ $file ]; then
-      zellij action edit $file
-    else
-      echo "󰂭  No file selected!"
     fi
   else
     echo "󰂭  Invalid option!"
