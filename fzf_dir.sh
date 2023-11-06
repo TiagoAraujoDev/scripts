@@ -1,20 +1,5 @@
 #!/usr/bin/bash
 
-if ! [ -x $(command -v fzf) ]; then
-  echo "󱧖 -> fzf not found (run: yay -S fzf)" | lolcat
-  exit
-fi
-
-if ! [ -x $(command -v zellij) ]; then
-  echo "󱧖 -> zellij not found (run: yay -S zellij)" | lolcat
-  exit
-fi
-
-if [ -x $(command -v lolcat) ]; then
-  echo "󱧖 -> zellij not found (run: yay -S lolcat)" | lolcat
-  exit
-fi
-
 EXCLUDE_DIRS=(
   ".*"
   "node_modules"
@@ -32,6 +17,63 @@ EXCLUDE_DIRS=(
   "HyprV4"
 )
 
+EXCLUDE_FILES=(
+  ".git"
+  ".next"
+  "build"
+  "node_modules"
+)
+
+dependencies=(
+  fzf
+  zellij
+  lolcat
+)
+
+for dep in "${dependencies[@]}"; do
+  if ! pacman -Qq $dep &> /dev/null; then
+    echo "󱧖 -> $dep not found (run: yay -S $dep)"
+    exit
+  fi
+done
+
+if [ $1 == "--help" ]; then
+  echo "  fzj is a shell script to give extra power to zellij
+
+  usage:
+    fzj -> open a zellij session with default name or list all section for selection 
+    fzj [option] [valeu]
+
+    options:
+      -t    create new tab in zellij with the given name[value]
+      -s    create new session with a given name[value]
+      -f    create a edit pane to the selected file
+
+    --help  show this message
+"
+  exit 0
+fi
+
+get_dir() {
+  FIND_COMMAND="find $HOME -type d"
+  for dir in "${EXCLUDE_DIRS[@]}"; do
+    FIND_COMMAND+=" -name '$dir' -prune -o"
+  done
+  FIND_COMMAND+=" -type d -print"
+  SELECTED_PATH=$(eval "$FIND_COMMAND" | fzf --prompt="󰥨 Search dir: " --height=40% --min-height=5 --pointer=" " --layout=reverse --border --preview "ls -la --color {}")
+  echo $SELECTED_PATH
+}
+
+get_file() {
+  FIND_COMMAND="find -type d"
+  for dir in "${EXCLUDE_FILES[@]}"; do
+    FIND_COMMAND+=" -name '$dir' -prune -o"
+  done
+  FIND_COMMAND+=" -type f -print"
+  FILE=$(eval "$FIND_COMMAND" | fzf --prompt="󰈞 Search file: " --height=40% --min-height=5 --pointer=" " --layout=reverse --border --preview "cat {}")
+  echo $FILE
+}
+
 if [ $# == 0 ]; then
   if [ $(zellij ls | wc -l) == 0 ]; then
     zellij --session default
@@ -46,32 +88,34 @@ if [ $# == 0 ]; then
 elif [ $# == 1 ]; then
   echo "󰂭  invalid command: fzj $1 [value]"
 else
-  FIND_COMMAND="find $HOME -type d"
+  if [ $1 == "-t" ]; then
+    path=$(get_dir)
 
-  for dir in "${EXCLUDE_DIRS[@]}"; do
-    FIND_COMMAND+=" -name '$dir' -prune -o"
-  done
-
-  FIND_COMMAND+=" -type d -print"
-
-  SELECTED_PATH=$(eval "$FIND_COMMAND" | fzf --prompt="󰥨 Search dir: " --height=40% --min-height=5 --pointer=" " --layout=reverse --border --preview "ls -la --color {}")
-
-  if [ $SELECTED_PATH ]; then
-    cd $SELECTED_PATH
+    cd $path
     
-    if [ $1 == "-t" ]; then
-      zellij action new-tab -n $2
-    elif [ $1 == "-s" ]; then
-      zellij --session $2
-    elif [ $1 == "-f"]; then
-      #  TODO: Select a file with fzf to edit on a pane in zellij
-      
-      # zellij action edit $file
-      echo "todo"
+    if [ $path ]; then
+      zellij action new-tab -n $2 -l ~/.config/zellij/fzj_tab.kdl -c $path
     else
-      echo "something" | lolcat
+      echo "󰂭  No path selected!"
+    fi
+  elif [ $1 == "-s" ]; then
+    path=$(get_dir)
+
+    cd $path
+    if [ $path ]; then
+      zellij --session $2
+    else
+      echo "󰂭  No path selected!"
+    fi
+  elif [ $1 == "-f" ]; then
+    file=$(get_file)
+    
+    if [ $file ]; then
+      zellij action edit $file
+    else
+      echo "󰂭  No file selected!"
     fi
   else
-    echo "󰂭  No path selected!" | lolcat
+    echo "󰂭  Invalid option!"
   fi
 fi
