@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # set some colors
 CNT="[\e[1;36mNOTE\e[0m]"
@@ -7,7 +7,7 @@ CER="[\e[1;31mERROR\e[0m]"
 CAT="[\e[1;37mATTENTION\e[0m]"
 CWR="[\e[1;35mWARNING\e[0m]"
 CAC="[\e[1;33mACTION\e[0m]"
-INSTLOG="$HOME/scripts/install.log"
+INSTLOG="$HOME/install.log"
 
 packages=(
   git
@@ -62,7 +62,7 @@ install_software() {
         echo -e "$COK - $1 is already installed."
     else
         # no package found so installing
-        echo -en "$CNT - Now installing $1..."
+        echo -en "$CNT - Now installing $1 ..."
         yay -S --noconfirm $1 &>> $INSTLOG &
         show_progress $!
         # test to make sure package installed
